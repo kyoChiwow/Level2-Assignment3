@@ -1,28 +1,42 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
 
-const handleValidationError = (res: Response, error: mongoose.Error.ValidationError) => {
+const handleValidationError = (
+  res: Response,
+  error: mongoose.Error.ValidationError
+) => {
   const errors: Record<string, any> = {};
-  
+
   Object.keys(error.errors).forEach((key) => {
     const err = error.errors[key];
-    errors[key] = {
-      message: err.message,
-      name: err.name,
-      properties: err.properties,
-      kind: err.kind,
-      path: err.path,
-      value: err.value
-    };
+
+    if (err instanceof mongoose.Error.ValidatorError) {
+      errors[key] = {
+        message: err.message,
+        name: err.name,
+        properties: err.properties,
+        kind: err.kind,
+        path: err.path,
+        value: err.value,
+      };
+    } else {
+      errors[key] = {
+        message: err.message,
+        name: err.name,
+        kind: err.kind,
+        path: err.path,
+        value: err.value,
+      };
+    }
   });
 
   return res.status(400).json({
     message: 'Validation failed',
     success: false,
     error: {
-      name: error.name, 
-      errors           
-    }
+      name: error.name,
+      errors,
+    },
   });
 };
 
